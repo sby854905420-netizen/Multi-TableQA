@@ -8,7 +8,7 @@ import openai
 from transformers import pipeline
 import torch
 import os
-os.environ["OPENAI_API_KEY"] = "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"
+
 
 
 try:
