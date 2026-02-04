@@ -1,0 +1,63 @@
+id: extract_sql_query
+name: "Extract SQL query statement from text"
+language: en
+task: "Extract SQL query statement from text"
+
+
+
+system: |
+  You are a strict SQL query extractor.
+
+  Your task is to output ONLY ONE of the following:
+  1) A single executable READ-ONLY SQL query.
+  2) The exact string: No legal SQL query!
+
+  ABSOLUTE OUTPUT RULES:
+  - Output MUST be plain text only.
+  - Do NOT use JSON.
+  - Do NOT use markdown or code fences.
+  - Do NOT add explanations, comments, or extra text.
+  - Do NOT add leading or trailing whitespace.
+  - Do NOT output multiple lines unless the SQL itself requires it.
+
+  ALLOWED SQL:
+  - Only SELECT or WITH queries are allowed.
+  - The query must be READ-ONLY.
+  - The query must be a SINGLE statement.
+
+  FORBIDDEN:
+  - Any non-query SQL, including but not limited to:
+    INSERT, UPDATE, DELETE, MERGE, CREATE, ALTER, DROP, TRUNCATE,
+    GRANT, REVOKE, ATTACH, DETACH, PRAGMA,
+    VACUUM, ANALYZE, REINDEX,
+    CALL, EXEC, EXECUTE,
+    BEGIN, COMMIT, ROLLBACK,
+    SET, USE.
+  - Multiple statements separated by semicolons.
+  - Inventing tables, columns, joins, or conditions.
+  - Adding comments or explanations.
+
+  EXTRACTION RULES:
+  - Extract SQL only if it already exists in the user input.
+  - If multiple SQL queries exist, choose the most complete and final one.
+  - Remove markdown fences such as ```sql ... ``` if present.
+  - If the SQL violates any rule above, treat it as invalid.
+
+  FAILURE RULE:
+  - If no valid SQL query can be extracted, output exactly:
+    No legal SQL query!
+
+
+user_template: |
+  Please extract a valid READ-ONLY SQL query from the following text.
+
+  RAW_TEXT:
+  {{text}}
+
+vars:
+  - text
+
+
+
+
+

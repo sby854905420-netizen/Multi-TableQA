@@ -1,7 +1,8 @@
 from pyvis.network import Network
+import networkx as nx
+import os
 
-
-def draw_graph(G):
+def draw_graph(G:nx.DiGraph,name:str):
     net = Network(
         directed=True,
         height="1200px",
@@ -22,6 +23,7 @@ def draw_graph(G):
             title=f"weight={data.get('weight', 1.0)}"
         )
 
-    net.show("graph_visualisation.html", notebook=False)
+    basic_path = os.getcwd()
+    net.show(f"{basic_path}/Visualisations/{name}_graph_visualisation.html", notebook=False)
 
 

@@ -1,0 +1,100 @@
+id: schema_alignment_financial
+name: "Strict NL question to schema alignment"
+language: en
+task: "Split question into semantic fragments and align each fragment to a schema column"
+
+system: |
+  You are a precise and cautious assistant for aligning natural language questions with database schema variables.
+
+  You will be given:
+  1) A database schema containing (sheet_name, column_name, description).
+  2) A natural language question.
+  3) Optional tips that explain how certain phrases correspond to specific columns or meanings.
+
+  Your responsibilities:
+  - Decompose the question into minimal semantic fragments.
+  - For each fragment, align it to exactly one column_name and sheet_name from the provided schema.
+  - Use only exact column_name and sheet_name values that appear in the schema.
+  - Tips are only hints to help you choose the correct target column; do NOT invent columns or tables.
+
+  Output constraints:
+  - Output must be valid JSON only.
+  - Do not include markdown, explanations, or comments.
+  - If no verified mapping is possible, return: {"results": [], "reason": "..."} where "reason" is a short string.
+
+user_template: |
+  ## Database schema (sheet_name | column_name | description)
+  {{schema_rows}}
+
+  ## Question
+  {{question}}
+
+  ## Tips (hints, optional)
+  {{tips}}
+
+  ## Instructions
+  1) Identify semantic fragments from the question.
+  2) For each fragment, pick the single best (sheet_name, column_name) from the schema.
+  3) Use tips as hints for choosing the right column (e.g., synonym mappings or column semantics).
+  4) Only output mappings that you can justify from the schema descriptions and/or tips. If no mapping can be produced, return {"results": [], "reason": "..."}.
+
+  ## Required output format
+  {
+    "results": [
+      {
+        "fragment": "string",
+        "sheet_name": "string",
+        "column_name": "string",
+        "evidence": "string"
+      }
+    ]
+  }
+
+vars:
+  - schema_rows
+  - question
+  - tips
+
+
+examples: |
+  ### Example presented:
+  ## Database schema (sheet_name | column_name | description)
+  {{example_schema_rows}}
+
+  ## Question
+  How many accounts who choose issuance after transaction are staying in East Bohemia region?
+
+  ## Tips (hints, optional)
+  A3 contains the data of region; 'POPLATEK PO OBRATU' represents for 'issuance after transaction'.
+
+  output: |
+    {
+      "results": [
+        {
+          "fragment": "accounts",
+          "sheet_name": "account",
+          "column_name": "account_id",
+          "evidence": "account_id is the identifier for accounts in schema"
+        },
+        {
+          "fragment": "issuance after transaction",
+          "sheet_name": "account",
+          "column_name": "frequency",
+          "evidence": "tip maps 'issuance after transaction' to 'POPLATEK PO OBRATU', which corresponds to frequency in schema/example"
+        },
+        {
+          "fragment": "East Bohemia region",
+          "sheet_name": "district",
+          "column_name": "A3",
+          "evidence": "tip states A3 contains region data; schema describes A3 as region name"
+        }
+      ]
+    }
+
+vars:
+  - example_schema_rows
+
+notes: |
+  tips are not rules; they are hints to disambiguate columns.
+  evidence must be short and should cite schema description and/or a tip.
+  

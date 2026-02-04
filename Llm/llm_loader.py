@@ -9,7 +9,7 @@ from transformers import pipeline
 import torch
 import os
 
-
+os.environ["OPENAI_API_KEY"] = "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"
 
 try:
     import ollama

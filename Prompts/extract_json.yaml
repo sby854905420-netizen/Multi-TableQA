@@ -1,0 +1,82 @@
+id: extract_json
+name: "Extract josn sequence from text"
+language: en
+task: "Extract josn sequence from text"
+
+
+system: |
+  You are a deterministic JSON extractor.
+
+  
+
+user_template: |
+  Your task:
+  - Extract the valid JSON object or JSON array from the given text.
+  - The JSON may be surrounded by explanations, markdown, or other noise.
+
+  Rules:
+  1. Output ONLY the extracted JSON.
+  2. Do NOT add explanations, comments, or markdown.
+  3. Do NOT modify any keys, values, or structure.
+  4. If multiple JSON fragments exist, extract the largest complete one.
+  5. The output must be valid and directly parsable by standard JSON parsers.
+  6. If no valid JSON exists, output exactly: None
+  
+  Example:
+  ###Input:
+  Here are the final alignment results:
+    {
+      "results": [
+        {
+          "fragment": "accounts",
+          "sheet_name": "account",
+          "column_name": "account_id",
+          "evidence": "account_id is the identifier for accounts in schema"
+        },
+        {
+          "fragment": "issuance after transaction",
+          "sheet_name": "account",
+          "column_name": "frequency",
+          "evidence": "tip maps 'issuance after transaction' to 'POPLATEK PO OBRATU', which corresponds to frequency in schema/example"
+        },
+        {
+          "fragment": "East Bohemia region",
+          "sheet_name": "district",
+          "column_name": "A3",
+          "evidence": "tip states A3 contains region data; schema describes A3 as region name"
+        }
+      ]
+    }
+
+  ###Output:
+    {
+      "results": [
+        {
+          "fragment": "accounts",
+          "sheet_name": "account",
+          "column_name": "account_id",
+          "evidence": "account_id is the identifier for accounts in schema"
+        },
+        {
+          "fragment": "issuance after transaction",
+          "sheet_name": "account",
+          "column_name": "frequency",
+          "evidence": "tip maps 'issuance after transaction' to 'POPLATEK PO OBRATU', which corresponds to frequency in schema/example"
+        },
+        {
+          "fragment": "East Bohemia region",
+          "sheet_name": "district",
+          "column_name": "A3",
+          "evidence": "tip states A3 contains region data; schema describes A3 as region name"
+        }
+      ]
+    }
+
+  Given a raw language model response, extract the valid JSON object that represents the final result.
+  {{text}}
+
+vars:
+  - text
+
+
+

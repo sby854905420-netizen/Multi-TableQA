@@ -1,0 +1,155 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 1200px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027client_id\u0027, \u0027disp\u0027)", "label": "client_id", "shape": "dot", "title": "Variable: client_id\u003cbr\u003eTable: disp"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027disp_id\u0027, \u0027disp\u0027)", "label": "disp_id", "shape": "dot", "title": "Variable: disp_id\u003cbr\u003eTable: disp"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027type\u0027, \u0027disp\u0027)", "label": "type", "shape": "dot", "title": "Variable: type\u003cbr\u003eTable: disp"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027account_id\u0027, \u0027disp\u0027)", "label": "account_id", "shape": "dot", "title": "Variable: account_id\u003cbr\u003eTable: disp"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027district_id\u0027, \u0027account\u0027)", "label": "district_id", "shape": "dot", "title": "Variable: district_id\u003cbr\u003eTable: account"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027account_id\u0027, \u0027account\u0027)", "label": "account_id", "shape": "dot", "title": "Variable: account_id\u003cbr\u003eTable: account"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027frequency\u0027, \u0027account\u0027)", "label": "frequency", "shape": "dot", "title": "Variable: frequency\u003cbr\u003eTable: account"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027date\u0027, \u0027account\u0027)", "label": "date", "shape": "dot", "title": "Variable: date\u003cbr\u003eTable: account"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027type\u0027, \u0027card\u0027)", "label": "type", "shape": "dot", "title": "Variable: type\u003cbr\u003eTable: card"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027card_id\u0027, \u0027card\u0027)", "label": "card_id", "shape": "dot", "title": "Variable: card_id\u003cbr\u003eTable: card"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027issued\u0027, \u0027card\u0027)", "label": "issued", "shape": "dot", "title": "Variable: issued\u003cbr\u003eTable: card"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027gender\u0027, \u0027client\u0027)", "label": "gender", "shape": "dot", "title": "Variable: gender\u003cbr\u003eTable: client"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027client_id\u0027, \u0027client\u0027)", "label": "client_id", "shape": "dot", "title": "Variable: client_id\u003cbr\u003eTable: client"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027birth_date\u0027, \u0027client\u0027)", "label": "birth_date", "shape": "dot", "title": "Variable: birth_date\u003cbr\u003eTable: client"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027district_id\u0027, \u0027client\u0027)", "label": "district_id", "shape": "dot", "title": "Variable: district_id\u003cbr\u003eTable: client"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A2\u0027, \u0027district\u0027)", "label": "A2", "shape": "dot", "title": "Variable: A2\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027district_id\u0027, \u0027district\u0027)", "label": "district_id", "shape": "dot", "title": "Variable: district_id\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A3\u0027, \u0027district\u0027)", "label": "A3", "shape": "dot", "title": "Variable: A3\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A4\u0027, \u0027district\u0027)", "label": "A4", "shape": "dot", "title": "Variable: A4\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A5\u0027, \u0027district\u0027)", "label": "A5", "shape": "dot", "title": "Variable: A5\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A6\u0027, \u0027district\u0027)", "label": "A6", "shape": "dot", "title": "Variable: A6\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A7\u0027, \u0027district\u0027)", "label": "A7", "shape": "dot", "title": "Variable: A7\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A8\u0027, \u0027district\u0027)", "label": "A8", "shape": "dot", "title": "Variable: A8\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A9\u0027, \u0027district\u0027)", "label": "A9", "shape": "dot", "title": "Variable: A9\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A10\u0027, \u0027district\u0027)", "label": "A10", "shape": "dot", "title": "Variable: A10\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A11\u0027, \u0027district\u0027)", "label": "A11", "shape": "dot", "title": "Variable: A11\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A12\u0027, \u0027district\u0027)", "label": "A12", "shape": "dot", "title": "Variable: A12\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A13\u0027, \u0027district\u0027)", "label": "A13", "shape": "dot", "title": "Variable: A13\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A14\u0027, \u0027district\u0027)", "label": "A14", "shape": "dot", "title": "Variable: A14\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A15\u0027, \u0027district\u0027)", "label": "A15", "shape": "dot", "title": "Variable: A15\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027A16\u0027, \u0027district\u0027)", "label": "A16", "shape": "dot", "title": "Variable: A16\u003cbr\u003eTable: district"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027date\u0027, \u0027loan\u0027)", "label": "date", "shape": "dot", "title": "Variable: date\u003cbr\u003eTable: loan"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027loan_id\u0027, \u0027loan\u0027)", "label": "loan_id", "shape": "dot", "title": "Variable: loan_id\u003cbr\u003eTable: loan"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027amount\u0027, \u0027loan\u0027)", "label": "amount", "shape": "dot", "title": "Variable: amount\u003cbr\u003eTable: loan"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027duration\u0027, \u0027loan\u0027)", "label": "duration", "shape": "dot", "title": "Variable: duration\u003cbr\u003eTable: loan"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027payments\u0027, \u0027loan\u0027)", "label": "payments", "shape": "dot", "title": "Variable: payments\u003cbr\u003eTable: loan"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027status\u0027, \u0027loan\u0027)", "label": "status", "shape": "dot", "title": "Variable: status\u003cbr\u003eTable: loan"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027account_id\u0027, \u0027loan\u0027)", "label": "account_id", "shape": "dot", "title": "Variable: account_id\u003cbr\u003eTable: loan"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027bank_to\u0027, \u0027order\u0027)", "label": "bank_to", "shape": "dot", "title": "Variable: bank_to\u003cbr\u003eTable: order"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027order_id\u0027, \u0027order\u0027)", "label": "order_id", "shape": "dot", "title": "Variable: order_id\u003cbr\u003eTable: order"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027account_to\u0027, \u0027order\u0027)", "label": "account_to", "shape": "dot", "title": "Variable: account_to\u003cbr\u003eTable: order"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027amount\u0027, \u0027order\u0027)", "label": "amount", "shape": "dot", "title": "Variable: amount\u003cbr\u003eTable: order"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027k_symbol\u0027, \u0027order\u0027)", "label": "k_symbol", "shape": "dot", "title": "Variable: k_symbol\u003cbr\u003eTable: order"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027account_id\u0027, \u0027order\u0027)", "label": "account_id", "shape": "dot", "title": "Variable: account_id\u003cbr\u003eTable: order"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027date\u0027, \u0027trans\u0027)", "label": "date", "shape": "dot", "title": "Variable: date\u003cbr\u003eTable: trans"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027trans_id\u0027, \u0027trans\u0027)", "label": "trans_id", "shape": "dot", "title": "Variable: trans_id\u003cbr\u003eTable: trans"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027type\u0027, \u0027trans\u0027)", "label": "type", "shape": "dot", "title": "Variable: type\u003cbr\u003eTable: trans"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027operation\u0027, \u0027trans\u0027)", "label": "operation", "shape": "dot", "title": "Variable: operation\u003cbr\u003eTable: trans"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027amount\u0027, \u0027trans\u0027)", "label": "amount", "shape": "dot", "title": "Variable: amount\u003cbr\u003eTable: trans"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027balance\u0027, \u0027trans\u0027)", "label": "balance", "shape": "dot", "title": "Variable: balance\u003cbr\u003eTable: trans"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027bank\u0027, \u0027trans\u0027)", "label": "bank", "shape": "dot", "title": "Variable: bank\u003cbr\u003eTable: trans"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027account\u0027, \u0027trans\u0027)", "label": "account", "shape": "dot", "title": "Variable: account\u003cbr\u003eTable: trans"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027k_symbol\u0027, \u0027trans\u0027)", "label": "k_symbol", "shape": "dot", "title": "Variable: k_symbol\u003cbr\u003eTable: trans"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027account_id\u0027, \u0027trans\u0027)", "label": "account_id", "shape": "dot", "title": "Variable: account_id\u003cbr\u003eTable: trans"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027card_id\u0027, \u0027disp\u0027)", "label": "card_id", "shape": "dot", "title": "Variable: card_id\u003cbr\u003eTable: disp"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "(\u0027disp_id\u0027, \u0027card\u0027)", "label": "disp_id", "shape": "dot", "title": "Variable: disp_id\u003cbr\u003eTable: card"}]);
+                  edges = new vis.DataSet([{"arrows": "to", "dashes": false, "from": "(\u0027client_id\u0027, \u0027disp\u0027)", "title": "weight=1.0", "to": "(\u0027disp_id\u0027, \u0027disp\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027disp_id\u0027, \u0027disp\u0027)", "title": "weight=1.0", "to": "(\u0027account_id\u0027, \u0027disp\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027disp_id\u0027, \u0027disp\u0027)", "title": "weight=1.0", "to": "(\u0027disp_id\u0027, \u0027card\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027type\u0027, \u0027disp\u0027)", "title": "weight=1.0", "to": "(\u0027disp_id\u0027, \u0027disp\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027account_id\u0027, \u0027disp\u0027)", "title": "weight=1.0", "to": "(\u0027account_id\u0027, \u0027account\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027district_id\u0027, \u0027account\u0027)", "title": "weight=1.0", "to": "(\u0027account_id\u0027, \u0027account\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027frequency\u0027, \u0027account\u0027)", "title": "weight=1.0", "to": "(\u0027account_id\u0027, \u0027account\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027date\u0027, \u0027account\u0027)", "title": "weight=1.0", "to": "(\u0027account_id\u0027, \u0027account\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027type\u0027, \u0027card\u0027)", "title": "weight=1.0", "to": "(\u0027card_id\u0027, \u0027card\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027issued\u0027, \u0027card\u0027)", "title": "weight=1.0", "to": "(\u0027card_id\u0027, \u0027card\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027gender\u0027, \u0027client\u0027)", "title": "weight=1.0", "to": "(\u0027client_id\u0027, \u0027client\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027client_id\u0027, \u0027client\u0027)", "title": "weight=1.0", "to": "(\u0027card_id\u0027, \u0027disp\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027birth_date\u0027, \u0027client\u0027)", "title": "weight=1.0", "to": "(\u0027client_id\u0027, \u0027client\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027district_id\u0027, \u0027client\u0027)", "title": "weight=1.0", "to": "(\u0027client_id\u0027, \u0027client\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A2\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027district_id\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027client\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027district_id\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027account\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A3\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A4\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A5\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A6\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A7\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A8\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A9\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A10\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A11\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A12\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A13\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A14\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A15\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027A16\u0027, \u0027district\u0027)", "title": "weight=1.0", "to": "(\u0027district_id\u0027, \u0027district\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027date\u0027, \u0027loan\u0027)", "title": "weight=1.0", "to": "(\u0027loan_id\u0027, \u0027loan\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027loan_id\u0027, \u0027loan\u0027)", "title": "weight=1.0", "to": "(\u0027account_id\u0027, \u0027loan\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027amount\u0027, \u0027loan\u0027)", "title": "weight=1.0", "to": "(\u0027loan_id\u0027, \u0027loan\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027duration\u0027, \u0027loan\u0027)", "title": "weight=1.0", "to": "(\u0027loan_id\u0027, \u0027loan\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027payments\u0027, \u0027loan\u0027)", "title": "weight=1.0", "to": "(\u0027loan_id\u0027, \u0027loan\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027status\u0027, \u0027loan\u0027)", "title": "weight=1.0", "to": "(\u0027loan_id\u0027, \u0027loan\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027account_id\u0027, \u0027loan\u0027)", "title": "weight=1.0", "to": "(\u0027account_id\u0027, \u0027account\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027bank_to\u0027, \u0027order\u0027)", "title": "weight=1.0", "to": "(\u0027order_id\u0027, \u0027order\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027order_id\u0027, \u0027order\u0027)", "title": "weight=1.0", "to": "(\u0027account_id\u0027, \u0027order\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027account_to\u0027, \u0027order\u0027)", "title": "weight=1.0", "to": "(\u0027order_id\u0027, \u0027order\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027amount\u0027, \u0027order\u0027)", "title": "weight=1.0", "to": "(\u0027order_id\u0027, \u0027order\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027k_symbol\u0027, \u0027order\u0027)", "title": "weight=1.0", "to": "(\u0027order_id\u0027, \u0027order\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027account_id\u0027, \u0027order\u0027)", "title": "weight=1.0", "to": "(\u0027account_id\u0027, \u0027account\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027date\u0027, \u0027trans\u0027)", "title": "weight=1.0", "to": "(\u0027trans_id\u0027, \u0027trans\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027trans_id\u0027, \u0027trans\u0027)", "title": "weight=1.0", "to": "(\u0027account_id\u0027, \u0027trans\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027type\u0027, \u0027trans\u0027)", "title": "weight=1.0", "to": "(\u0027trans_id\u0027, \u0027trans\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027operation\u0027, \u0027trans\u0027)", "title": "weight=1.0", "to": "(\u0027trans_id\u0027, \u0027trans\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027amount\u0027, \u0027trans\u0027)", "title": "weight=1.0", "to": "(\u0027trans_id\u0027, \u0027trans\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027balance\u0027, \u0027trans\u0027)", "title": "weight=1.0", "to": "(\u0027trans_id\u0027, \u0027trans\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027bank\u0027, \u0027trans\u0027)", "title": "weight=1.0", "to": "(\u0027trans_id\u0027, \u0027trans\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027account\u0027, \u0027trans\u0027)", "title": "weight=1.0", "to": "(\u0027trans_id\u0027, \u0027trans\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027k_symbol\u0027, \u0027trans\u0027)", "title": "weight=1.0", "to": "(\u0027trans_id\u0027, \u0027trans\u0027)"}, {"arrows": "to", "dashes": false, "from": "(\u0027account_id\u0027, \u0027trans\u0027)", "title": "weight=1.0", "to": "(\u0027account_id\u0027, \u0027account\u0027)"}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
