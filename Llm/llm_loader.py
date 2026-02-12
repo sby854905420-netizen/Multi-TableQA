@@ -1,9 +1,7 @@
 import os
 import json
-import time
 import hashlib
-import requests
-from typing import List, Dict, Union
+from typing import List, Union
 import openai
 from transformers import pipeline
 import torch
@@ -46,7 +44,7 @@ class LLM:
 
     def _query_openai(self, prompt: str) -> str:
         """Call OpenAI API to generate text"""
-        client = openai.OpenAI()
+        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         response = client.chat.completions.create(
             model=self.model_name,

@@ -11,6 +11,9 @@ system: |
   2) A natural language question.
   3) Optional tips that explain how certain phrases correspond to specific columns or meanings.
 
+  ## Database schema (sheet_name | column_name | description)
+  {{schema_description}}
+
   Your responsibilities:
   - Decompose the question into minimal semantic fragments.
   - For each fragment, align it to exactly one column_name and sheet_name from the provided schema.
@@ -22,10 +25,10 @@ system: |
   - Do not include markdown, explanations, or comments.
   - If no verified mapping is possible, return: {"results": [], "reason": "..."} where "reason" is a short string.
 
-user_template: |
-  ## Database schema (sheet_name | column_name | description)
-  {{schema_rows}}
+vars:
+  - schema_description
 
+user_template: |
   ## Question
   {{question}}
 
@@ -38,7 +41,7 @@ user_template: |
   3) Use tips as hints for choosing the right column (e.g., synonym mappings or column semantics).
   4) Only output mappings that you can justify from the schema descriptions and/or tips. If no mapping can be produced, return {"results": [], "reason": "..."}.
 
-  ## Required output format
+  ## Required output format:
   {
     "results": [
       {
@@ -51,50 +54,39 @@ user_template: |
   }
 
 vars:
-  - schema_rows
   - question
   - tips
 
 
 examples: |
   ### Example presented:
-  ## Database schema (sheet_name | column_name | description)
-  {{example_schema_rows}}
-
   ## Question
   How many accounts who choose issuance after transaction are staying in East Bohemia region?
 
   ## Tips (hints, optional)
   A3 contains the data of region; 'POPLATEK PO OBRATU' represents for 'issuance after transaction'.
 
-  output: |
-    {
-      "results": [
-        {
-          "fragment": "accounts",
-          "sheet_name": "account",
-          "column_name": "account_id",
-          "evidence": "account_id is the identifier for accounts in schema"
-        },
-        {
-          "fragment": "issuance after transaction",
-          "sheet_name": "account",
-          "column_name": "frequency",
-          "evidence": "tip maps 'issuance after transaction' to 'POPLATEK PO OBRATU', which corresponds to frequency in schema/example"
-        },
-        {
-          "fragment": "East Bohemia region",
-          "sheet_name": "district",
-          "column_name": "A3",
-          "evidence": "tip states A3 contains region data; schema describes A3 as region name"
-        }
-      ]
-    }
-
-vars:
-  - example_schema_rows
-
-notes: |
-  tips are not rules; they are hints to disambiguate columns.
-  evidence must be short and should cite schema description and/or a tip.
+  output:
+  {
+    "results": [
+      {
+        "fragment": "accounts",
+        "sheet_name": "account",
+        "column_name": "account_id",
+        "evidence": "account_id is the identifier for accounts in schema"
+      },
+      {
+        "fragment": "issuance after transaction",
+        "sheet_name": "account",
+        "column_name": "frequency",
+        "evidence": "tip maps 'issuance after transaction' to 'POPLATEK PO OBRATU', which corresponds to frequency in schema/example"
+      },
+      {
+        "fragment": "East Bohemia region",
+        "sheet_name": "district",
+        "column_name": "A3",
+        "evidence": "tip states A3 contains region data; schema describes A3 as region name"
+      }
+    ]
+  }
   

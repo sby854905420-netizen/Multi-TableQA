@@ -1,38 +1,43 @@
 import pandas as pd
 import torch.nn.functional as F
-from Utils.embedding_tools import get_embeddings
 import torch
-import numpy as np
+from openai import OpenAI
+import os
 
-def Table_RAG(question:str, corpus_embeddings: pd.DataFrame, embedding_model="text-embedding-3-small", threshold=0.8) -> pd.DataFrame:
+
+def get_embeddings(text:str, embedding_model="text-embedding-3-small") -> torch.Tensor:
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))    
+    text = text.strip().replace('\n',' ')
+    embedding = client.embeddings.create(input = [text], model=embedding_model).data[0].embedding
+    return torch.tensor(embedding, dtype=torch.float)
+
+
+
+def Table_RAG(segments:list, schema_info: pd.DataFrame, embedding_model="text-embedding-3-small", threshold=0.8) -> dict:
     # Step 1: Get embedding for the question
-    query_embedding = get_embeddings(question,embedding_model=embedding_model)
-    # Step 2: Compute cosine similarity
-    corpus_embeddings['cos_value'] = corpus_embeddings['embedding'].apply(
-        lambda x: F.cosine_similarity(query_embedding, x, dim=0)
-    )
-    # print(f"Similarities: {similarities}")
-    # Step 3: Normalize and filter based on threshold
-    corpus_embeddings['squared_cos_value'] = corpus_embeddings['cos_value'] ** 2
-    range_similarities = corpus_embeddings['squared_cos_value'].max() - corpus_embeddings['squared_cos_value'].min()
+    segments = [v for d in segments for v in d.values()]
+    query_segments_embedding = torch.stack([get_embeddings(s) for s in segments])
+    # Step 2: Get embedding for the schema
+    schema_embeddings = torch.stack(list(schema_info['embedding']))
+    # Step 3: square and normalize the cosine value
+    # vectors are unit vectors
+    cos_sim_matrix = query_segments_embedding @ schema_embeddings.T
+    # element-wise square
+    sq = cos_sim_matrix ** 2
+    # row-wise Min-Max normalization
+    row_min = sq.min(dim=1, keepdim=True).values
+    row_max = sq.max(dim=1, keepdim=True).values 
+    normalized = (sq - row_min) / (row_max - row_min + 1e-12)
+    # # Step 4: find all data where normailized similaritie is larger than threshold
+    indices = (normalized > threshold).nonzero(as_tuple=False).tolist()
+    if indices == []:
+        return []
+    
+    dict = {}
+    for index in indices:
+        dict[segments[index[0]]] = (schema_info.iloc[index[1]]['column_name'],schema_info.iloc[index[1]]['sheet_name'])
 
-    if range_similarities == 0:
-        corpus_embeddings['normalized_similarities'] = 0
-        # normalized_similarities = torch.zeros_like(corpus_embeddings['squared_cos_value'].sample(n=1).iloc[0])
-    else:
-        corpus_embeddings['normalized_similarities'] = (torch.tensor(corpus_embeddings['squared_cos_value'],dtype=torch.float) - 
-                                                        corpus_embeddings['squared_cos_value'].min()) / range_similarities
-                                                        
-    # Step 4: find all data where normailized similaritie is larger than threshold
-    above_threshold_index = corpus_embeddings['normalized_similarities'] > threshold
+    return dict
 
-    if len(above_threshold_index) == 0:
-            return []
-    else:
-    # Step 5: Sort the selected indices by similarity
-        sorted_df = corpus_embeddings.loc[above_threshold_index].sort_values(
-            by='normalized_similarities',
-            ascending=False
-        )
 
-    return sorted_df
+

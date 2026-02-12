@@ -9,53 +9,7 @@ system: |
   Your task is to generate ONE executable SQL query that correctly answers the given question, strictly based on the provided reasoning paths and schema information.
   -------------------------------------------------------------------------
   Database Schema (sheet_name | column_name | description):
-    account | account_id | the id of the account
-    account | frequency | frequency of the acount."POPLATEK MESICNE" stands for monthly issuance "POPLATEK TYDNE" stands for weekly issuance "POPLATEK PO OBRATU" stands for issuance after transaction
-    account | date | the creation date of the account, in the form YYMMDD
-    card | card_id | id number of credit card
-    card | type | type of credit card,""junior": junior class of credit card;  "classic": standard class of credit card;  "gold": high-level credit card"
-    card | issued | the date when the credit card issued, in the form YYMMDD
-    client | client_id | the unique number of the client
-    client | gender | F: female or M: male of the client
-    client | birth_date | birth date of the client
-    district | district_id | nan
-    district | A2 | district_name
-    district | A3 | region
-    district | A4 | number of inhabitants
-    district | A5 | no. of municipalities with inhabitants < 499
-    district | A6 | no. of municipalities with inhabitants 500-1999
-    district | A7 | no. of municipalities with inhabitants 2000-9999
-    district | A8 | no. of municipalities with inhabitants > 10000
-    district | A9 | not useful
-    district | A10 | ratio of urban inhabitants
-    district | A11 | average salary
-    district | A12 | unemployment rate 1995
-    district | A13 | unemployment rate 1996
-    district | A14 | no. of entrepreneurs per 1000 inhabitants
-    district | A15 | no. of committed crimes 1995
-    district | A16 | no. of committed crimes 1996
-    loan | loan_id | nan
-    loan | date | the date when the loan is approved
-    loan | amount | approved amount of loan, unit: US dollar
-    loan | duration | loan duration, unit: month
-    loan | payments | monthly payments of loan, unit: month
-    loan | status | repayment status of loan, 'A' stands for contract finished, no problems; 'B' stands for contract finished, loan not paid; 'C' stands for running contract, OK so far; 'D' stands for running contract, client in debt
-    order | order_id | identifying the unique order
-    order | bank_to | bank of the recipient
-    order | account_to | account of the recipient, each bank has unique two-letter code
-    order | amount | debited amount
-    order | k_symbol | purpose of the payment, "POJISTNE" stands for insurance payment "SIPO" stands for household payment "LEASING" stands for leasing "UVER" stands for loan payment
-    trans | date | date of transaction
-    trans | type | "PRIJEM" stands for credit "VYDAJ" stands for withdrawal
-    trans | operation | mode of transaction, "VYBER KARTOU": credit card withdrawal "VKLAD": credit in cash "PREVOD Z UCTU" :collection from another bank "VYBER": withdrawal in cash "PREVOD NA UCET": remittance to another bank
-    trans | amount | amount of money
-    trans | balance | balance after transaction
-    trans | k_symbol | "POJISTNE": stands for insurrance payment "SLUZBY": stands for payment for statement "UROK": stands for interest credited "SANKC. UROK": sanction interest if negative balance "SIPO": stands for household "DUCHOD": stands for old-age pension "UVER": stands for loan payment
-    trans | bank | each bank has unique two-letter code
-    trans | account | nan
-    trans | trans_id | transaction id
-    disp | disp_id | unique number of identifying this row of record
-    disp | type | type of disposition. "OWNER" : "USER" : "DISPONENT" commonsense evidence: the account can only have the right to issue permanent orders or apply
+  {{schema_description}}
   
   -------------------------------------------------------------------------
   Important principles:
@@ -63,6 +17,9 @@ system: |
   - You must explicitly decide which paths are relevant to the question.
   - Irrelevant paths MUST be ignored.
   - Never invent tables, columns, joins, or values that are not grounded in the paths or schema.
+
+vars:
+  - schema_description
 
 
 user_template: |
@@ -137,9 +94,7 @@ user_template: |
     - If a table name is a SQL reserved keyword (e.g., order), always wrap it in double quotes: "order"
 
   11. **Alias Rules**
-    - Aliases must be meaningful and concise.
-    - If an alias contains spaces, wrap it in double quotes.
-    - Do NOT combine multiple fields into a single alias.
+    - do not use alias in sql query
   
   12. **Categorical Constraints**
       - For card.type, only use known values:
@@ -164,7 +119,7 @@ user_template: |
     Path 5: A3[district] → district_id[district] → district_id[account] → account_id[account] → account_id[disp] → disp_id[disp] → disp_id[card] → card_id[card] 
 
   ## sql:
-    SELECT COUNT(DISTINCT account.account_id) AS issuance_lovers_in_east_bohemia
+    SELECT COUNT(DISTINCT account.account_id)
     FROM account
     JOIN trans ON account.account_id = trans.account_id
     JOIN district ON account.district_id = district.district_id
@@ -183,8 +138,7 @@ user_template: |
     Path 4: date[trans] → trans_id[trans] → account_id[trans] → account_id[account] → account_id[disp] → disp_id[disp
     
   ## sql:
-    SELECT district.A2 AS district_name,
-    trans.amount
+    SELECT district.A2, trans.amount
     FROM trans
     JOIN account ON trans.account_id = account.account_id
     JOIN disp ON account.account_id = disp.account_id

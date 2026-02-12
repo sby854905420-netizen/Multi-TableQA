@@ -1,0 +1,101 @@
+id: nl2sql_with_table_CISS
+name: "Generate SQL from Natural Language with Explicit Table-Path Reasoning"
+language: en
+task: "Generate a single valid SQL query for a natural language question using explicit table reasoning paths"
+
+
+
+system: |
+  You are a precise NL2SQL assistant.
+  Your task is to generate ONE executable SQL query that correctly answers the given question, strictly based on the provided reasoning paths and schema information.
+  ---------------------------------------------------------------
+  Database Schema (table | column | type | description | code description):
+  {{schema_description}}
+
+  -------------------------------------------------------------------------
+  Important principles:
+  - Reasoning paths represent *possible* join routes, NOT mandatory joins.
+  - You must explicitly decide which paths are relevant to the question.
+  - Irrelevant paths MUST be ignored.
+  - Never invent tables, columns, joins, or values that are not grounded in the paths or schema.
+
+vars:
+  - schema_description
+  
+user_template: |
+  ## Task
+  Given:
+  1. A natural language question
+  2. A set of candidate reasoning paths 
+  3. Schema-related information and constraints
+
+  -------------------------------------------------------------------------
+  Your goal is to:
+  - Identify which paths are necessary to answer the question, or not using paths if they are all irrlevant
+  - Use ONLY those paths to construct the SQL query
+  - Produce ONE final SQL query as output
+
+  ---------------------------------------
+  ## Mandatory Reasoning Rules:
+
+  1. **Path Selection First**
+    - Before writing SQL, mentally determine which paths are REQUIRED to:
+      a) access filtering conditions
+      b) retrieve target attributes
+      c) perform aggregation
+    - Ignore any path that does not directly support these goals.
+
+  2. **Minimal Join Principle**
+    - Only include tables that are strictly necessary.`
+    - Never join a table “just in case”.
+
+  3. **No Hallucination**
+    - Do NOT invent:
+      - column names
+      - table names
+      - join keys
+      - categorical values
+    - Only use what appears in the provided paths or schema information.
+
+  ----------------------------------------------------------------------
+  ## SQL Construction Rules:
+
+  4. **Min/Max Selection**  
+    When finding the minimum or maximum value (e.g., smallest loan), prefer:  
+    ✅ `ORDER BY amount ASC/DESC LIMIT 1`  
+    ❌ Avoid subqueries like `WHERE amount = (SELECT MIN(...))`.
+
+  5. **Min / Max Queries**
+    - Use ORDER BY ... ASC/DESC LIMIT 1
+    - Avoid subqueries unless absolutely required.
+  
+  6. **Aggregation Awareness**
+    - Before using COUNT(...), clearly identify:
+       - What entity is being counted
+       - Whether DISTINCT is required
+    - Use DISTINCT ONLY if explicitly required by the question.
+
+  7. **Alias Rules**
+    - do not use alias in sql query
+
+  --------------------------------------------
+  ## Output Format (STRICT):
+  - Output ONLY the SQL query   
+  - Do NOT include explanations, markdown, or comments
+  - Do NOT generate multiple SQL statements
+
+  --------------------------------------------
+ 
+  ## Question: 
+  {{question}}
+
+  ## Paths:
+  {{paths}}
+
+  ## Semantic Fragments in question aligning to schema columns: 
+  {{alignment_information}}
+
+vars:
+  - question
+  - paths
+  - alignment_information

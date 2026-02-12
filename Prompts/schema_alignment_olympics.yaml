@@ -11,6 +11,9 @@ system: |
   2) A natural language question.
   3) Optional tips that explain how certain phrases correspond to specific columns or meanings.
 
+  ## Database schema (sheet_name | column_name | description_or_keywords):
+  {{schema_description}}
+
   Your responsibilities:
   - Decompose the question into minimal semantic fragments (e.g., athlete name, country/NOC, sport, event, medal type, year, host city, team).
   - For each fragment, align it to exactly one column_name and sheet_name from the provided schema.
@@ -23,10 +26,11 @@ system: |
   - Do not include markdown, explanations, or comments.
   - If no verified mapping is possible, return: {"results": [], "reason": "..."} where "reason" is a short string.
 
-user_template: |
-  ## Database schema (sheet_name | column_name | description_or_keywords)
-  {{schema_rows}}
+vars:
+  - schema_description
 
+
+user_template: |
   ## Question
   {{question}}
 
@@ -40,7 +44,7 @@ user_template: |
   4) Only output mappings that you can justify from the schema descriptions/keywords and/or tips.
   5) If no mapping can be produced, return {"results": [], "reason": "..."}.
 
-  ## Required output format
+  ## Required output format:
   {
     "results": [
       {
@@ -53,44 +57,37 @@ user_template: |
   }
 
 vars:
-  - schema_rows
   - question
   - tips
 
 examples: |
   ### Example presented:
-  ## Database schema (sheet_name | column_name | description_or_keywords)
-  {{example_schema_rows}}
-
   ## Question
   How many people have won the gold medal of the event "Rowing Women's Coxed Eights"?
 
   ## Tips (hints, optional)
   won the gold medal refers to medal_name = 'Gold'; event "Rowing Women's Coxed Eights" refers to event_name = 'Rowing Women''s Coxed Eights';
 
-  output: |
-    {
-      "results": [
-        {
-          "fragment": "gold medal",
-          "sheet_name": "medal",
-          "column_name": "medal_name",
-          "evidence": "tip explicitly maps 'won the gold medal' to medal.medal_name='Gold'; schema says medal_name is medal type"
-        },
-        {
-          "fragment": "Rowing Women's Coxed Eights",
-          "sheet_name": "event",
-          "column_name": "event_name",
-          "evidence": "tip explicitly maps the quoted event title to event.event_name; schema says event_name is event"
-        },
-        {
-          "fragment": "how many people",
-          "sheet_name": "competitor_event",
-          "column_name": "competitor_id",
-          "evidence": "counting 'people' corresponds to counting competitor identifiers; schema indicates competitor_id identifies the competitor participating in an event"
-        }
-      ]
-    }
-
-vars:
-  - example_schema_rows
+  output:
+  {
+    "results": [
+      {
+        "fragment": "gold medal",
+        "sheet_name": "medal",
+        "column_name": "medal_name",
+        "evidence": "tip explicitly maps 'won the gold medal' to medal.medal_name='Gold'; schema says medal_name is medal type"
+      },
+      {
+        "fragment": "Rowing Women's Coxed Eights",
+        "sheet_name": "event",
+        "column_name": "event_name",
+        "evidence": "tip explicitly maps the quoted event title to event.event_name; schema says event_name is event"
+      },
+      {
+        "fragment": "how many people",
+        "sheet_name": "competitor_event",
+        "column_name": "competitor_id",
+        "evidence": "counting 'people' corresponds to counting competitor identifiers; schema indicates competitor_id identifies the competitor participating in an event"
+      }
+    ]
+  }

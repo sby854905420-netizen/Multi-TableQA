@@ -5,13 +5,14 @@ import pandas as pd
 import pandas as pd
 from typing import Tuple
 from Llm.llm_loader import LLM
-from datetime import datetime
 from Utils.path_finder import find_all_paths
-from collections import Counter
 from Utils.prompt_registry import PromptRegistry
 from jinja2 import Template
 from Data.Olympics.graph_construction import build_variable_dependency_graph
-from Utils.sql_check import looks_like_query_sql
+import sqlparse
+from Evaluate.compute_metrics import compute_metrics_BIRD
+from tqdm import tqdm
+
 
 def get_question_answers(path:str, topics=["olympics"], limit=10000) -> list:
     """
@@ -66,14 +67,21 @@ def build_variable_alignment_prompt(schema_description:pd.DataFrame, question_it
         lines.append(f"{r['sheet_name']} | {r['column_name']} | {kw}")
     schema_description_str = "\n".join(lines)
 
-    messages = prompts_registry.render("schema_alignment_olympics",
-                               schema_description_str,
-                               question_item["question"],
-                               question_item["evidence"])
-    
-    final_prompt = prompts_registry.hash_prompt(messages)
+    schema_alignment_prompt = prompts_registry.load("schema_alignment_olympics")
+    system_tpl = Template(schema_alignment_prompt["system"])
+    system_msg = system_tpl.render({
+        "schema_description" : schema_description_str
+    })
 
-    return final_prompt
+    user_tpl = Template(schema_alignment_prompt["user_template"])
+    user_msg = user_tpl.render({
+        "question" : question_item['question'],
+        "tips" : question_item['evidence']
+    })
+
+    run_prompt = system_msg + "\n" + schema_alignment_prompt["examples"] + "\n" + user_msg
+
+    return run_prompt
 
 def parse_attributes_json(response: str, prompts_registry:PromptRegistry,LLM:LLM) -> list:
     text = response.strip()
@@ -91,7 +99,7 @@ def parse_attributes_json(response: str, prompts_registry:PromptRegistry,LLM:LLM
     })
     run_prompt = system_msg + "\n" + user_msg
 
-    json_text = LLM(run_prompt)
+    json_text = LLM.query(run_prompt)
     
     try:
         results = json.loads(json_text.strip())
@@ -131,30 +139,44 @@ def format_paths(paths:list) -> str:
         lines.append(f"Path {i}: {path_str}")
     return "\n".join(lines)
 
-def parse_sql_text(response: str, prompts_registry:PromptRegistry,LLM:LLM) -> Tuple[bool,str]:
-    ok, reason, sql_text = looks_like_query_sql(response,require_from=False)
-    if ok:
-        return ok,sql_text
-    else:
-        print(reason)
-        print("Try to extrac SQL query using LLM.")
+def parse_sql_text(sql_statement: str, prompts_registry:PromptRegistry,LLM:LLM) -> str:
+    extract_json_prompt = prompts_registry.load("extract_sql_query")
+    system_msg = extract_json_prompt["system"]
+    user_tpl = Template(extract_json_prompt["user_template"])
+    user_msg = user_tpl.render({
+        "text" : sql_statement
+    })
+    run_prompt = system_msg + "\n" + user_msg
+    sql_llm_text = LLM.query(run_prompt)
 
-        extract_json_prompt = prompts_registry.load("extract_sql_query")
-        system_msg = extract_json_prompt["system"]
-        user_tpl = Template(extract_json_prompt["user_template"])
-        user_msg = user_tpl.render({
-            "text" : response
-        })
-        run_prompt = system_msg + "\n" + user_msg
-        sql_llm_text = LLM(run_prompt)
-
-        ok, reason, sql_text = looks_like_query_sql(sql_llm_text,require_from=False)
-        if ok:
-            return ok,sql_llm_text
-        else:
-            return ok,sql_llm_text
+    return sql_llm_text
  
-def get_SQL_TableRAG(schema_description:pd.DataFrame, question_item:pd.DataFrame, 
+def run_sql_on_db(sql: str, conn: sqlite3.Connection):
+    result_df = pd.read_sql_query(sql, conn)
+    return result_df.to_dict(orient="records")
+
+def check_sql_syntax(sql:str,conn: sqlite3.Connection):
+    try:
+        parsed = sqlparse.parse(sql)
+        try:
+            conn.execute("EXPLAIN " + sql)
+            return True
+        except sqlite3.OperationalError:
+            return False
+    except SyntaxError:
+        return False
+
+def check_sql_valid(sql:str,conn: sqlite3.Connection, prompts_registry:PromptRegistry,LLM:LLM):
+    if check_sql_syntax(sql,conn):
+        return True, run_sql_on_db(sql,conn)
+    else:
+        sql_fixed = parse_sql_text(sql,prompts_registry,LLM)
+        if check_sql_syntax(sql_fixed,conn):
+            return True, run_sql_on_db(sql,conn)
+        else:
+            return False, "No Valid SQL !!!!!"
+
+def get_SQL(schema_description:pd.DataFrame, question_item:pd.DataFrame, 
                     prompts_registry:PromptRegistry, Answer_llm:LLM) -> Tuple[bool,str]:
     
     variable_alignment_prompt= build_variable_alignment_prompt(schema_description, question_item,prompts_registry)
@@ -162,55 +184,53 @@ def get_SQL_TableRAG(schema_description:pd.DataFrame, question_item:pd.DataFrame
     # print(f"Response: {variable_alignment_results}")
     match_result_list = parse_attributes_json(variable_alignment_results,prompts_registry,Answer_llm)
     if match_result_list is None:
-        print(f"[Skipped] No valid match_result for question: {question_item['question']}")
+        print(f"[Skipped] No valid match_result for question: \n{question_item['question']}")
         return None  
     attribute_match_results = match_result_to_text(match_result_list)
     variables, sheet_names = extract_variable_info(match_result_list)
 
     Paths = filter_all_paths(variables,sheet_names)
     if not Paths:
-        print(f"[Skipped] No path found for question: {question_item['question']}")
-        return None
-    Paths_text = format_paths(Paths)
+        # print(f"[Skipped] No path found for question: {question_item['question']}")
+        Paths_text = f"No path found for question: {question_item['question']}"
+    else:
+        Paths_text = format_paths(Paths)
+    
 
+    lines = []
+    for _, r in schema_description.iterrows():
+        kw = str(r['key_words']).strip().replace("\n", " ")
+        lines.append(f"{r['sheet_name']} | {r['column_name']} | {kw}")
+    schema_description_str = "\n".join(lines)
+    
     nl2sql_prompt_tmplate = prompts_registry.load("nl2sql_with_table_olympics")
-    system_msg = nl2sql_prompt_tmplate["system"]
+    system_tpl = Template(nl2sql_prompt_tmplate["system"])
+    system_msg = system_tpl.render({
+        "schema_description" : schema_description_str
+    })
+
     user_tpl = Template(nl2sql_prompt_tmplate["user_template"])
     user_msg = user_tpl.render({
         "question" : question_item['question'],
         "paths" : Paths_text,
-        "information" : attribute_match_results
+        "alignment_information" : attribute_match_results
     })
     run_nl2sql_prompt = system_msg + "\n" + user_msg
-
     sql_statement_result = Answer_llm.query(run_nl2sql_prompt)
-    
-    ok, final_pred_sql = parse_sql_text(sql_statement_result,prompts_registry,Answer_llm)
+    return sql_statement_result
 
-    return ok, final_pred_sql
-
-def run_sql_on_db(sql: str, conn: sqlite3.Connection):
-    result_df = pd.read_sql_query(sql, conn)
-    return result_df.to_dict(orient="records")
 
 def main():
     # intialize the basic path
     basic_path = os.getcwd()
     # intialize all file pathes in the project
-    keywords_description_file_path = "Data/Olympics/DataBaseInfo/keywords_description.xlsx"
+    olympics_schema_description_file_path = "Data/Olympics/DataBaseInfo/olympics_schema.xlsx"
     total_question_answers_file_path = "Data/Olympics/question_answer.json"
     db_path = "Data/Olympics/SqlDatabase/olympics.sqlite"
     prompts_dir = "Prompts"
 
-    # Generate a timestamp for this run (used to avoid log overwrite)
-    # time_tag = datetime.now().strftime("%Y%m%d_%H%M%S")
-    # # Construct a unique log directory for the current experiment
-    # log_folder = os.path.join(basic_path,"Logs",f"financial_test_{time_tag}")
-    # # Create the log directory if it does not already exist
-    # os.makedirs(log_folder, exist_ok=True)
-
     # extract the keywords descriptions of the columns from the table
-    schema_info = pd.read_excel(os.path.join(basic_path,keywords_description_file_path))
+    schema_info = pd.read_excel(os.path.join(basic_path,olympics_schema_description_file_path))
 
     # intialize the LLM model for answering the question
     Answer_llm = LLM(model_name = "gpt-5-mini-2025-08-07", provider= "openai")
@@ -225,19 +245,29 @@ def main():
     prompts_registry = PromptRegistry(prompt_dir=os.path.join(basic_path,prompts_dir))
 
     conn = sqlite3.connect(os.path.join(basic_path,db_path))
-    grade = 0
-    for idx, qa_pair in enumerate(olympics_qa_pairs):
-        if idx< 5:
-            print("*****************************")
-            print(f"Processing question {idx+1}")
-            get_SQL_TableRAG(schema_info,qa_pair, prompts_registry,Answer_llm)
-            ok,sql_pred = get_SQL_TableRAG(schema_info,qa_pair, prompts_registry,Answer_llm)
-            if ok:
-                answer_pred = run_sql_on_db(sql_pred, conn)
-                ground_truth = run_sql_on_db(qa_pair['SQL'], conn)
-                # correctness = results_equal(answer_pred, ground_truth)
-                print(f"Prediction: {answer_pred} vs Label : {ground_truth}")
 
+    preds = []
+    labels = []
+
+    for idx, qa_pair in tqdm(enumerate(olympics_qa_pairs)):
+        # print("*****************************")
+        # print(f"Processing question {idx+1}")
+        sql_pred = get_SQL(schema_info,qa_pair, prompts_registry,Answer_llm)
+
+        ok, answer_pred = check_sql_valid(sql_pred,conn,prompts_registry,Answer_llm)
+
+        if ok:
+            preds.append(answer_pred)
+        else:
+            preds.append(False)
+            print(answer_pred)
+        ground_truth = run_sql_on_db(qa_pair['SQL'], conn)
+        labels.append(ground_truth)
+
+        # print(f"Prediction: {answer_pred} vs Label : {ground_truth}")
+
+    exact_accuray,contain_accuray = compute_metrics_BIRD(preds,labels)    
+    print(f"Exact Accuracy: {exact_accuray}, Contain Accuracy: {contain_accuray}")
     conn.close()
 
     

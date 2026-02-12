@@ -10,38 +10,7 @@ system: |
   Your task is to generate ONE executable SQL query that correctly answers the given question, strictly based on the provided reasoning paths and schema information.
   ---------------------------------------------------------------
   Database Schema (table | column | description):
-    city | id | nan
-    city | city_name | name of city held Olympic game
-    games | id | nan
-    games | games_year | game year
-    games | games_name | name of Olympic game, like 1995 Winter
-    games | season | saeson, summer, winter
-    games_city | games_id | nan
-    games_city | city_id | nan
-    medal | id | nan
-    medal | medal_name | medal type: Bronze, Silver, Gold, NA
-    noc_region | id | nan
-    noc_region | noc | region noc code
-    noc_region | region_name | country, region name that competitor from
-    person | id | nan
-    person | full_name | full name of competitor
-    person | gender | male, female of competitor
-    person | height | height of competitor, tall, short,bmi
-    person | weight | weight of competitor, heavy, bmi
-    games_competitor | id | nan
-    games_competitor | games_id | nan
-    games_competitor | person_id | nan
-    games_competitor | age | age, year old
-    person_region | person_id | nan
-    person_region | region_id | nan
-    sport | id | nan
-    sport | sport_name | sport like swimming, Shooting Women's Trap
-    event | id | nan
-    event | sport_id | nan
-    event | event_name | event
-    competitor_event | event_id | nan
-    competitor_event | competitor_id | which competitor in which game
-    competitor_event | medal_id | nan
+  {{schema_description}}
 
   -------------------------------------------------------------------------
   Important principles:
@@ -50,6 +19,9 @@ system: |
   - Irrelevant paths MUST be ignored.
   - Never invent tables, columns, joins, or values that are not grounded in the paths or schema.
 
+vars:
+  - schema_description
+  
 user_template: |
   ## Task
   Given:
@@ -104,9 +76,7 @@ user_template: |
     - Use DISTINCT ONLY if explicitly required by the question.
 
   7. **Alias Rules**
-    - Aliases must be meaningful and concise.
-    - If an alias contains spaces, wrap it in double quotes.
-    - Do NOT combine multiple fields into a single alias.
+    - do not use alias in sql query
 
   --------------------------------------------
   ## Output Format (STRICT):
@@ -141,7 +111,7 @@ user_template: |
   {{paths}}
 
   ## Semantic Fragments in question aligning to schema columns: 
-  {{information}}
+  {{alignment_information}}
 
 vars:
   - question
